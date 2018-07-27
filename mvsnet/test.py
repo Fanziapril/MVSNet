@@ -16,7 +16,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import tensorflow as tf
-
+import pdb
 sys.path.append("../")
 from tools.common import Notify
 from preprocess import *
@@ -52,7 +52,7 @@ tf.app.flags.DEFINE_integer('batch_size', 1,
 
 # params for config
 tf.app.flags.DEFINE_string('pretrained_model_ckpt_path', 
-                           '/data/dtu/tf_model/mvsnet_arxiv/model.ckpt',
+                           './model/model.ckpt',
                            """Path to restore the model.""")
 tf.app.flags.DEFINE_integer('ckpt_step', 70000,
                             """ckpt step.""")
@@ -72,7 +72,7 @@ class MVSGenerator:
                 # read input data
                 images = []
                 cams = []
-                image_index = int(os.path.splitext(os.path.basename(data[0]))[0])
+                #image_index = int(os.path.splitext(os.path.basename(data[0]))[0])
                 selected_view_num = int(len(data) / 2)
 
                 for view in range(min(self.view_num, selected_view_num)):
@@ -127,7 +127,8 @@ class MVSGenerator:
                 croped_images = np.stack(croped_images, axis=0)
                 scaled_cams = np.stack(scaled_cams, axis=0)
                 self.counter += 1
-                yield (croped_images, centered_images, scaled_cams, image_index) 
+                #yield (croped_images, centered_images, scaled_cams, image_index) 
+		yield (croped_images, centered_images, scaled_cams) 
 
 def mvsnet_pipeline(mvs_list):
     """ mvsnet in altizure pipeline """
@@ -140,14 +141,16 @@ def mvsnet_pipeline(mvs_list):
 
     # Training and validation generators
     mvs_generator = iter(MVSGenerator(mvs_list, FLAGS.view_num))
-    generator_data_type = (tf.float32, tf.float32, tf.float32, tf.int32)    
+    #generator_data_type = (tf.float32, tf.float32, tf.float32, tf.int32) 
+    generator_data_type = (tf.float32, tf.float32, tf.float32)   
     # Datasets from generators
     mvs_set = tf.data.Dataset.from_generator(lambda: mvs_generator, generator_data_type)
     mvs_set = mvs_set.batch(FLAGS.batch_size)
     # iterators
     mvs_iterator = mvs_set.make_initializable_iterator()
     # data
-    croped_images, centered_images, scaled_cams, image_index = mvs_iterator.get_next()
+    #croped_images, centered_images, scaled_cams, image_index = mvs_iterator.get_next()
+    croped_images, centered_images, scaled_cams = mvs_iterator.get_next()
     croped_images.set_shape(tf.TensorShape([None, FLAGS.view_num, None, None, 3]))
     centered_images.set_shape(tf.TensorShape([None, FLAGS.view_num, None, None, 3]))
     scaled_cams.set_shape(tf.TensorShape([None, FLAGS.view_num, 2, 4, 4]))
@@ -192,9 +195,12 @@ def mvsnet_pipeline(mvs_list):
         for step in range(len(mvs_list)):
 
             start_time = time.time()
-            try:
+            in_index = tf.convert_to_tensor(step)
+	    #tf.convert_to_tensor(in_index)
+	    #pdb.set_trace()
+	    try:
                 out_depth_map, out_init_depth_map, out_prob_map, out_images, out_cams, out_index = sess.run(
-                    [depth_map, init_depth_map, prob_map, croped_images, scaled_cams, image_index])
+                    [depth_map, init_depth_map, prob_map, croped_images, scaled_cams, in_index])
             except tf.errors.OutOfRangeError:
                 print("all dense finished")  # ==> "End of dataset"
                 break

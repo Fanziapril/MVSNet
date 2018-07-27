@@ -30,11 +30,11 @@ FLAGS = tf.app.flags.FLAGS
 
 
 # params for datasets
-tf.app.flags.DEFINE_string('dtu_data_root', '/data/dtu/', 
+tf.app.flags.DEFINE_string('dtu_data_root', '../MVS_TRAINING', 
                            """Path to dtu dataset.""")
-tf.app.flags.DEFINE_string('log_dir', '/data/tf_log',
+tf.app.flags.DEFINE_string('log_dir', '../log',
                            """Path to store the log.""")
-tf.app.flags.DEFINE_string('save_dir', '/data/tf_model',
+tf.app.flags.DEFINE_string('save_dir', '../model',
                            """Path to save the model.""")
 tf.app.flags.DEFINE_boolean('train_dtu', True, 
                             """Whether to train.""")

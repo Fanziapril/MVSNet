@@ -225,13 +225,14 @@ def gen_dtu_resized_path(dtu_data_folder, mode='training'):
     cluster_list = file_io.FileIO(cluster_file_path, mode='r').read().split()
 
     # 3 sets
-    training_set = [2, 6, 7, 8, 14, 16, 18, 19, 20, 22, 30, 31, 36, 39, 41, 42, 44,
-                    45, 46, 47, 50, 51, 52, 53, 55, 57, 58, 60, 61, 63, 64, 65, 68, 69, 70, 71, 72,
-                    74, 76, 83, 84, 85, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100,
-                    101, 102, 103, 104, 105, 107, 108, 109, 111, 112, 113, 115, 116, 119, 120,
-                    121, 122, 123, 124, 125, 126, 127, 128]
-    validation_set = [3, 5, 17, 21, 28, 35, 37, 38, 40, 43, 56, 59, 66, 67, 82, 86, 106, 117]
-
+    #training_set = [2, 6, 7, 8, 14, 16, 18, 19, 20, 22, 30, 31, 36, 39, 41, 42, 44,
+    #                45, 46, 47, 50, 51, 52, 53, 55, 57, 58, 60, 61, 63, 64, 65, 68, 69, 70, 71, 72,
+    #                74, 76, 83, 84, 85, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100,
+    #                101, 102, 103, 104, 105, 107, 108, 109, 111, 112, 113, 115, 116, 119, 120,
+    #                121, 122, 123, 124, 125, 126, 127, 128]
+    #validation_set = [3, 5, 17, 21, 28, 35, 37, 38, 40, 43, 56, 59, 66, 67, 82, 86, 106, 117]
+    training_set = [1,2]
+    validation_set = [3]
     data_set = []
     if mode == 'training':
         data_set = training_set
@@ -242,7 +243,7 @@ def gen_dtu_resized_path(dtu_data_folder, mode='training'):
     for i in data_set:
 
         image_folder = os.path.join(dtu_data_folder, ('Rectified/scan%d_train' % i))
-        cam_folder = os.path.join(dtu_data_folder, 'Cameras/train')
+        cam_folder = os.path.join(dtu_data_folder, 'Cameras')
         depth_folder = os.path.join(dtu_data_folder, ('Depths/scan%d_train' % i))
 
         if mode == 'training':
@@ -393,35 +394,36 @@ def gen_mvs_list(mode='training'):
 
 # for testing
 def gen_pipeline_mvs_list(dense_folder):
-    """ mvs input path list """
-    image_folder = os.path.join(dense_folder, 'images')
-    cam_folder = os.path.join(dense_folder, 'cams')
-    cluster_list_path = os.path.join(dense_folder, 'pair.txt')
-    cluster_list = open(cluster_list_path).read().split()
+   """ mvs input path list """
+   image_folder = os.path.join(dense_folder, 'images')
+   image_list = os.listdir(image_folder)
+   cam_folder = os.path.join(dense_folder, 'cams')
+   cam_list = os.listdir(cam_folder)
+   image_num = len(image_list)
+   if image_num != len(cam_list):
+       print("Cam files number mismatch!")
 
-    # for each dataset
-    mvs_list = []
-    pos = 1
-    for i in range(int(cluster_list[0])):
-        paths = []
-        # ref image
-        ref_index = int(cluster_list[pos])
-        pos += 1
-        ref_image_path = os.path.join(image_folder, ('%08d.jpg' % ref_index))
-        ref_cam_path = os.path.join(cam_folder, ('%08d_cam.txt' % ref_index))
-        paths.append(ref_image_path)
-        paths.append(ref_cam_path)
-        # view images
-        all_view_num = int(cluster_list[pos])
-        pos += 1
-        check_view_num = min(FLAGS.view_num - 1, all_view_num)
-        for view in range(check_view_num):
-            view_index = int(cluster_list[pos + 2 * view])
-            view_image_path = os.path.join(image_folder, ('%08d.jpg' % view_index))
-            view_cam_path = os.path.join(cam_folder, ('%08d_cam.txt' % view_index))
-            paths.append(view_image_path)
-            paths.append(view_cam_path)
-        pos += 2 * all_view_num
-        # depth path
-        mvs_list.append(paths)
-    return mvs_list
+   # for each dataset
+   mvs_list = []
+   for image_id in range(image_num):
+       paths = []
+       # ref image
+       #ref_index = int(cluster_list[pos])
+       #pos += 1
+       ref_image_path = os.path.join(image_folder, image_list[image_id])
+       ref_cam_path = os.path.join(cam_folder, cam_list[image_id])
+       paths.append(ref_image_path)
+       paths.append(ref_cam_path)
+       # view images
+       all_view_num = len(image_list)
+       check_view_num = min(FLAGS.view_num - 1, all_view_num)
+       for view in range(check_view_num):
+           view_index = random.randint(0, image_num-1)
+           while view_index == image_id:
+               view_index = random.randint(0, image_num-1)
+           view_image_path = os.path.join(image_folder, image_list[view_index])
+           view_cam_path = os.path.join(cam_folder, cam_list[view_index])
+           paths.append(view_image_path)
+           paths.append(view_cam_path)
+       mvs_list.append(paths)
+   return mvs_list
