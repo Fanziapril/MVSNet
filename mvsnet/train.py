@@ -30,7 +30,7 @@ FLAGS = tf.app.flags.FLAGS
 
 
 # params for datasets
-tf.app.flags.DEFINE_string('dtu_data_root', '../MVS_TRAINING', 
+tf.app.flags.DEFINE_string('dtu_data_root', '../train/RenderingImg', 
                            """Path to dtu dataset.""")
 tf.app.flags.DEFINE_string('log_dir', '../log',
                            """Path to store the log.""")
@@ -46,9 +46,9 @@ tf.app.flags.DEFINE_integer('view_num', 3,
                             """Number of images (1 ref image and view_num - 1 view images).""")
 tf.app.flags.DEFINE_integer('max_d', 128, 
                             """Maximum depth step when training.""")
-tf.app.flags.DEFINE_integer('max_w', 640, 
+tf.app.flags.DEFINE_integer('max_w', 256, 
                             """Maximum image width when training.""")
-tf.app.flags.DEFINE_integer('max_h', 512, 
+tf.app.flags.DEFINE_integer('max_h', 256, 
                             """Maximum image height when training.""")
 tf.app.flags.DEFINE_float('sample_scale', 0.25, 
                             """Downsample scale for building cost volume.""")
@@ -58,7 +58,7 @@ tf.app.flags.DEFINE_float('interval_scale', 1.6,
                             """Downsample scale for building cost volume.""")
 tf.app.flags.DEFINE_integer('batch_size', 1, 
                             """training batch size""")
-tf.app.flags.DEFINE_integer('epoch', 6, 
+tf.app.flags.DEFINE_integer('epoch', 10, 
                             """training epoch""")
 tf.app.flags.DEFINE_float('val_ratio', 0, 
                           """ratio of validation set when splitting dataset.""")
@@ -103,7 +103,10 @@ class MVSGenerator:
                 images = []
                 cams = []
                 for view in range(self.view_num):
-                    image = center_image(cv2.imread(data[2 * view]))
+                    #import pdb
+		    #pdb.set_trace()
+		    #print(data[2*view])
+		    image = center_image(cv2.imread(data[2 * view]))
                     cam = load_cam(open(data[2 * view + 1]))
                     cam[1][3][1] = cam[1][3][1] * FLAGS.interval_scale
                     images.append(image)
@@ -185,7 +188,9 @@ def train(traning_list):
             with tf.device('/gpu:%d' % i):
                 with tf.name_scope('Model_tower%d' % i) as scope:
                     # generate data
-                    images, cams, depth_image = training_iterator.get_next()
+		    #import pdb
+                    #pdb.set_trace()
+		    images, cams, depth_image = training_iterator.get_next()
                     images.set_shape(tf.TensorShape([None, FLAGS.view_num, None, None, 3]))
                     cams.set_shape(tf.TensorShape([None, FLAGS.view_num, 2, 4, 4]))
                     depth_image.set_shape(tf.TensorShape([None, None, None, 1]))
@@ -207,6 +212,8 @@ def train(traning_list):
                     refined_depth_map = depth_refine(
                         depth_map, ref_image, FLAGS.max_d, depth_start, depth_interval, is_master_gpu)
                     # loss
+                    #import pdb
+		    #pdb.set_trace()
                     loss0, less_one_temp, less_three_temp = mvsnet_loss(
                         depth_map, depth_image, depth_interval)
                     loss1, less_one_accuracy, less_three_accuracy = mvsnet_loss(

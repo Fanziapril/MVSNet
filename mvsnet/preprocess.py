@@ -24,6 +24,8 @@ FLAGS = tf.app.flags.FLAGS
 
 def center_image(img):
     """ normalize image input """
+    #import pdb
+    #pdb.set_trace()
     img = img.astype(np.float32)
     var = np.var(img, axis=(0,1), keepdims=True)
     mean = np.mean(img, axis=(0,1), keepdims=True)
@@ -181,6 +183,7 @@ def load_pfm(file):
     shape = (height, width, 3) if color else (height, width)
     data = np.reshape(data, shape)
     data = cv2.flip(data, 0)
+    data = cv2.resize(data,(0,0),fx=0.25,fy=0.25)
     return data
 
 def write_pfm(file, image, scale=1):
@@ -225,14 +228,12 @@ def gen_dtu_resized_path(dtu_data_folder, mode='training'):
     cluster_list = file_io.FileIO(cluster_file_path, mode='r').read().split()
 
     # 3 sets
-    #training_set = [2, 6, 7, 8, 14, 16, 18, 19, 20, 22, 30, 31, 36, 39, 41, 42, 44,
-    #                45, 46, 47, 50, 51, 52, 53, 55, 57, 58, 60, 61, 63, 64, 65, 68, 69, 70, 71, 72,
-    #                74, 76, 83, 84, 85, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100,
-    #                101, 102, 103, 104, 105, 107, 108, 109, 111, 112, 113, 115, 116, 119, 120,
-    #                121, 122, 123, 124, 125, 126, 127, 128]
-    #validation_set = [3, 5, 17, 21, 28, 35, 37, 38, 40, 43, 56, 59, 66, 67, 82, 86, 106, 117]
-    training_set = [1,2]
-    validation_set = [3]
+    #training_set = [1, 2, 3, 4, 5, 6, 7, 8,9,10,11,12,13, 14,15,16,17, 18, 19, 20,21, 22, 23, 24, 25, 26, 27, 28 , 29, 30, 31, 32, 33, 34, 35, 36,37,38, 39,40, 41, 42, 43,44,
+    #                45, 46, 47, 48]
+    training_set = np.arange(1,100)
+    validation_set = [56, 59, 66, 67, 82, 86, 106, 117]
+    #training_set = [1,2]
+    #validation_set = [3]
     data_set = []
     if mode == 'training':
         data_set = training_set
@@ -241,30 +242,33 @@ def gen_dtu_resized_path(dtu_data_folder, mode='training'):
 
     # for each dataset
     for i in data_set:
-
-        image_folder = os.path.join(dtu_data_folder, ('Rectified/scan%d_train' % i))
-        cam_folder = os.path.join(dtu_data_folder, 'Cameras')
-        depth_folder = os.path.join(dtu_data_folder, ('Depths/scan%d_train' % i))
+        print(i)
+        image_folder = os.path.join(dtu_data_folder, ('Rectified/scan%d' % i))
+        cam_folder = os.path.join(dtu_data_folder, ('Cameras/scan%d' % i))
+        depth_folder = os.path.join(dtu_data_folder, ('Depths/scan%d' % i))
 
         if mode == 'training':
             # for each lighting
-            for j in range(0, 7):
+            for j in range(1, 8):
                 # for each reference image
                 for p in range(0, int(cluster_list[0])):
                     paths = []
                     # ref image
+                    #import pdb
+                    #pdb.set_trace()
                     ref_index = int(cluster_list[22 * p + 1])
                     ref_image_path = os.path.join(
-                        image_folder, ('rect_%03d_%d_r5000.png' % ((ref_index + 1), j)))
-                    ref_cam_path = os.path.join(cam_folder, ('%08d_cam.txt' % ref_index))
+                        image_folder, ('rect_%04d_%d.png' % ((ref_index + 1), j)))
+                    ref_cam_path = os.path.join(cam_folder, ('cam_%04d.txt' % ref_index))
                     paths.append(ref_image_path)
                     paths.append(ref_cam_path)
                     # view images
                     for view in range(FLAGS.view_num - 1):
                         view_index = int(cluster_list[22 * p + 2 * view + 3])
+                        #pdb.set_trace()
                         view_image_path = os.path.join(
-                            image_folder, ('rect_%03d_%d_r5000.png' % ((view_index + 1), j)))
-                        view_cam_path = os.path.join(cam_folder, ('%08d_cam.txt' % view_index))
+                            image_folder, ('rect_%04d_%d.png' % ((view_index + 1), j)))
+                        view_cam_path = os.path.join(cam_folder, ('cam_%04d.txt' % view_index))
                         paths.append(view_image_path)
                         paths.append(view_cam_path)
                     # depth path
@@ -395,10 +399,12 @@ def gen_mvs_list(mode='training'):
 # for testing
 def gen_pipeline_mvs_list(dense_folder):
    """ mvs input path list """
-   image_folder = os.path.join(dense_folder, 'images')
+   image_folder = os.path.join(dense_folder, 'Rectified')
    image_list = os.listdir(image_folder)
-   cam_folder = os.path.join(dense_folder, 'cams')
+   cam_folder = os.path.join(dense_folder, 'Cameras')
    cam_list = os.listdir(cam_folder)
+   import pdb
+   pdb.set_trace()
    image_num = len(image_list)
    if image_num != len(cam_list):
        print("Cam files number mismatch!")
@@ -411,6 +417,7 @@ def gen_pipeline_mvs_list(dense_folder):
        #ref_index = int(cluster_list[pos])
        #pos += 1
        ref_image_path = os.path.join(image_folder, image_list[image_id])
+       print(ref_image_path)
        ref_cam_path = os.path.join(cam_folder, cam_list[image_id])
        paths.append(ref_image_path)
        paths.append(ref_cam_path)

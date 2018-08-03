@@ -279,6 +279,8 @@ def non_zero_mean_absolute_diff(y_true, y_pred, interval):
     """ non zero mean absolute loss for one batch """
     with tf.name_scope('MAE'):
         shape = tf.shape(y_pred)
+	#import pdb
+	#pdb.set_trace()
         interval = tf.reshape(interval, [shape[0]])
         mask_true = tf.cast(tf.not_equal(y_true, 0.0), dtype='float32')
         denom = tf.reduce_sum(mask_true, axis=[1, 2, 3]) + 1e-7
