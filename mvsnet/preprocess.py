@@ -434,3 +434,18 @@ def gen_pipeline_mvs_list(dense_folder):
            paths.append(view_cam_path)
        mvs_list.append(paths)
    return mvs_list
+
+def get_normal_from_depth(depth_image):
+    [x, y] = np.meshgrid(range(0, depth_image.shape[1]), range(0, depth_image.shape[0]))
+    depth_x_minus_1 = np.roll(depth_image, 1, axis=1)
+    depth_y_minus_1 = np.roll(depth_image, 1, axis=0)
+    t_vec = np.dstack((x, y-1, depth_y_minus_1))
+    l_vec = np.dstack((x-1, y, depth_x_minus_1))
+    c_vec = np.dstack((x, y, depth_image))
+
+    d = np.cross(l_vec-c_vec, t_vec-c_vec)
+    n = np.linalg.norm(d, None, 2, True)
+    norm = np.divide(d, n)
+    # plt.imshow(norm)
+    # plt.show()
+    return norm
